@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>shibuya-demo</title>
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<link rel="stylesheet" type="text/css" href="./Qgis2threejs.css">
+<link rel="stylesheet" type="text/css" href="./mobile.css">
+<script defer src="./fontawesome/solid.min.js"></script>
+<script defer src="./fontawesome/fontawesome.min.js"></script>
+<script src="./threejs/three.min.js"></script>
+<script src="./threejs/OrbitControls.js"></script>
+<script src="./threejs/ViewHelper.js"></script>
+<script src="./proj4js/proj4.js"></script>
+<script src="./Qgis2threejs.js"></script>
+<script src="./threejs/DeviceOrientationControls.js"></script>
+<script src="./mobile.js"></script>
+</head>
+<body>
+
+<video id="video" autoplay></video>
+<div id="view">
+  <div id="labels"></div>
+  <div id="northarrow"></div>
+  <div id="navigation"></div>
+</div>
+
+<!-- buttons -->
+<button class="btn" id="stop-button" title="stop orbitting"><i class="fas fa-stop-circle fa-2x"></i></button>
+
+<label class="switch" title="AR mode">
+  <div>AR</div>
+  <input type="checkbox" id="ar-checkbox">
+  <span class="slider"></span>
+</label>
+
+<button class="btn" id="current-location" title="move to current location"><i class="fas fa-crosshairs fa-2x"></i></button>
+
+<div class="expand">
+  <input type="checkbox" id="expand-checkbox">
+  <label for="expand-checkbox" title="show/hide buttons">
+    <div class="btn btn1"><i class="fas fa-ellipsis-h fa-2x"></i></div>
+  </label>
+  <button class="btn btn2" id="layers-button" title="layer list"><i class="fas fa-layer-group fa-2x"></i></button>
+  <button class="btn btn3" id="settings-button" title="settings"><i class="fas fa-cog fa-2x"></i></button>
+  <button class="btn btn4" id="info-button" title="about this page"><i class="fas fa-info-circle fa-2x"></i></button>
+</div>
+
+<!-- layer list -->
+<div id="layerlist" class="hidden"></div>
+
+<!-- settings -->
+<div id="settings" class="hidden">
+  <div>AR mode camera settings</div>
+  <div>
+    <div>
+      <label>
+        Enabled: <input type="checkbox" id="camera-enabled" checked disabled>
+      </label>
+    </div>
+    <div>
+      <label>
+        Field of View (in degrees): <input type="number" id="fov">
+      </label>
+    </div>
+  </div>
+  <div>
+    <label>
+      <input type="checkbox" id="save-in-storage"> Save settings in local storage
+    </label>
+  </div>
+  <div>
+    <button id="settings-ok">OK</button>
+    <button id="settings-cancel">Cancel</button>
+  </div>
+</div>
+
+<!-- popup -->
+<div id="popup">
+  <div id="closebtn">&times;</div>
+  <div id="popupbar"></div>
+  <div id="popupbody">
+    <div id="popupcontent"></div>
+
+    <!-- query result -->
+    <div id="queryresult">
+      <table id="qr_layername_table">
+        <caption>Layer name</caption>
+        <tr><td id="qr_layername"></td></tr>
+      </table>
+
+      <table id="qr_coords_table">
+        <caption>Clicked coordinates</caption>
+        <tr><td id="qr_coords"></td></tr>
+      </table>
+
+      <!-- camera actions -->
+      <div class="action-btn action-zoom" onclick="app.cameraAction.zoomIn(); app.closePopup();">Zoom in here</div>
+      <div class="action-btn action-move" onclick="startARModeHere(); app.closePopup();">Start AR mode here</div>
+      <div class="action-btn action-move hidden" onclick="moveHere(); app.closePopup();">Move here</div>
+      <div class="action-btn action-orbit" onclick="app.cameraAction.orbit(); app.closePopup();">Orbit around here</div>
+
+      <!-- attributes -->
+      <table id="qr_attrs_table">
+        <caption>Attributes</caption>
+      </table>
+    </div>
+
+    <!-- page info -->
+    <div id="pageinfo">
+      <h1>Usage</h1>
+      <table id="usage">
+        <tr><td colspan="2" class="star">Non-AR mode</td></tr>
+        <tr><td>One Finger Move</td><td>Orbit</td></tr>
+        <tr><td>Two Fingers Pinch</td><td>Zoom</td></tr>
+        <tr><td>Two Fingers Move</td><td>Pan</td></tr>
+      </table>
+
+      <h1>About</h1>
+      <div id="about">
+        This page was made with <a href="https://www.qgis.org/" target="_blank">QGIS</a> and <a href="https://github.com/minorua/Qgis2threejs" target="_blank">Qgis2threejs</a> plugin (version 2.6).
+        <div>Powered by <a href="https://threejs.org/" target="_blank">three.js</a>,
+        <a href="https://trac.osgeo.org/proj4js/" target="_blank">Proj4js</a> and 
+        <a href="https://fontawesome.com/" target="_blank">Font Awesome</a>.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- progress bar -->
+<div id="progress"><div id="bar"></div></div>
+
+<!-- header and footer -->
+<div id="header"></div>
+<div id="footer"></div>
+
+<script>
+Q3D.Config.localMode = true;
+Q3D.Config.AR.MND = 0.0;
+
+var container = document.getElementById("view"),
+    app = Q3D.application;
+
+app.init(container);          // initialize viewer
+init();                       // initialization for mobile template (in mobile.js)
+
+// load the scene
+app.loadSceneFile("./data/index/scene.js", function (scene) {
+  // scene file has been loaded
+  app.start();
+
+  initLayerList(scene);
+
+  if ("AR" in app.urlParams) {
+    document.getElementById("ar-checkbox").checked = true;
+    startARMode();
+    moveToCurrentLocation();
+  }
+}, function (scene) {
+  // all relevant files have been loaded
+
+});
+</script>
+</body>
+</html>
